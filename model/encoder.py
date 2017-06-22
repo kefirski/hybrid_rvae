@@ -4,10 +4,11 @@ import torch.nn.functional as F
 
 
 class Encoder(nn.Module):
-    def __init__(self, embed_size):
+    def __init__(self, embed_size, latent_size):
         super(Encoder, self).__init__()
 
         self.embed_size = embed_size
+        self.latent_size = latent_size
 
         self.cnn = nn.Sequential(
             nn.Conv1d(self.embed_size, 128, 4, 2),
@@ -30,8 +31,8 @@ class Encoder(nn.Module):
             nn.BatchNorm1d(512),
             nn.ELU(),
 
-            nn.Conv1d(512, 512, 4, 2),
-            nn.BatchNorm1d(512),
+            nn.Conv1d(512, self.latent_size, 4, 2),
+            nn.BatchNorm1d(self.latent_size),
             nn.ELU()
         )
 

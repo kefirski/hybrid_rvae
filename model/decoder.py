@@ -40,9 +40,9 @@ class Decoder(nn.Module):
                           hidden_size=self.rnn_size,
                           num_layers=self.rnn_num_layers,
                           batch_first=True,
-                          bidirectional=False)
+                          bidirectional=True)
 
-        self.hidden_to_vocab = nn.Linear(self.rnn_size, self.vocab_size)
+        self.hidden_to_vocab = nn.Linear(self.rnn_size * 2, self.vocab_size)
 
     def forward(self, latent_variable):
         """
@@ -59,7 +59,7 @@ class Decoder(nn.Module):
         logits, _ = self.rnn(aux_logits)
 
         [batch_size, seq_len, _] = logits.size()
-        logits = logits.contiguous().view(-1, self.rnn_size)
+        logits = logits.contiguous().view(-1, self.rnn_size * 2)
 
         logits = self.hidden_to_vocab(logits)
 

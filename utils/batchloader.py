@@ -38,7 +38,7 @@ class BatchLoader:
         self.vocab_size, self.idx_to_char, self.char_to_idx = self.build_vocab(data)
 
         data = np.array([[self.char_to_idx[char] for char in line] for line in data.split('\n')[:-1]
-                         if 70 <= len(line) <= 210])
+                         if 70 <= len(line) <= 209])
 
         self.max_seq_len = max([len(line) for line in data])
 
@@ -79,9 +79,9 @@ class BatchLoader:
 
         return self._wrap_tensor(encoder_input, use_cuda)
 
-    def _wrap_tensor(self, encoder_input, use_cuda: bool):
+    def _wrap_tensor(self, input, use_cuda: bool):
         """
-        :param encoder_input: An list of batch size len filled with lists of input indexes
+        :param input: An list of batch size len filled with lists of input indexes
         :param use_cuda: whether to use cuda
         :return: encoder_input, decoder_input and decoder_target tensors of Long type
         """
@@ -91,23 +91,20 @@ class BatchLoader:
         and fills it with pad tokens in order to initialize Tensors
         """
 
-        batch_size = len(encoder_input)
+        batch_size = len(input)
 
         '''Add go token before decoder input and stop token after decoder target'''
-        decoder_input = [[self.char_to_idx[self.go_token]] + line for line in encoder_input]
-        decoder_target = [line + [self.char_to_idx[self.stop_token]] for line in encoder_input]
+        encoder_input = [[self.char_to_idx[self.go_token]] + line for line in np.copy(input)]
+        decoder_target = [line + [self.char_to_idx[self.stop_token]] for line in np.copy(input)]
 
         '''Evaluate how much it is necessary to fill with pad tokens to make the same lengths'''
-        input_seq_len = [len(line) for line in encoder_input]
-        max_input_seq_len = max(input_seq_len)
-        to_add = [max_input_seq_len - len(encoder_input[i]) for i in range(batch_size)]
+        to_add = [self.max_seq_len - len(input[i]) for i in range(batch_size)]
 
         for i in range(batch_size):
             encoder_input[i] += [self.char_to_idx[self.pad_token]] * to_add[i]
-            decoder_input[i] += [self.char_to_idx[self.pad_token]] * to_add[i]
             decoder_target[i] += [self.char_to_idx[self.pad_token]] * to_add[i]
 
-        result = [np.array(var) for var in [encoder_input, decoder_input, decoder_target]]
+        result = [np.array(var) for var in [encoder_input, decoder_target]]
         result = [Variable(t.from_numpy(var)).long() for var in result]
         if use_cuda:
             result = [var.cuda() for var in result]
