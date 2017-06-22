@@ -17,7 +17,7 @@ class BatchLoader:
         assert isinstance(data_path, str), \
             'Invalid data_path_prefix type. Required {}, but {} found'.format(str, type(data_path))
 
-        self.split = 3000
+        self.split = 1500
 
         self.data_path = data_path
 

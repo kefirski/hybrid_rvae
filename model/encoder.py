@@ -4,7 +4,7 @@ import torch.nn.functional as F
 
 
 class Encoder(nn.Module):
-    def __init__(self, sizes, embed_size):
+    def __init__(self, embed_size):
         super(Encoder, self).__init__()
 
         self.embed_size = embed_size
