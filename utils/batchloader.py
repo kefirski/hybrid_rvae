@@ -94,6 +94,7 @@ class BatchLoader:
 
         '''Add go token before decoder input and stop token after decoder target'''
         encoder_input = [[self.char_to_idx[self.go_token]] + line for line in np.copy(input)]
+        decoder_input = [[self.char_to_idx[self.go_token]] + line for line in np.copy(input)]
         decoder_target = [line + [self.char_to_idx[self.stop_token]] for line in np.copy(input)]
 
         '''Evaluate how much it is necessary to fill with pad tokens to make the same lengths'''
@@ -101,9 +102,10 @@ class BatchLoader:
 
         for i in range(batch_size):
             encoder_input[i] += [self.char_to_idx[self.pad_token]] * to_add[i]
+            decoder_input[i] += [self.char_to_idx[self.pad_token]] * to_add[i]
             decoder_target[i] += [self.char_to_idx[self.pad_token]] * to_add[i]
 
-        result = [np.array(var) for var in [encoder_input, decoder_target]]
+        result = [np.array(var) for var in [encoder_input, decoder_input, decoder_target]]
         result = [Variable(t.from_numpy(var)).long() for var in result]
         if use_cuda:
             result = [var.cuda() for var in result]

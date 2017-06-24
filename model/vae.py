@@ -6,6 +6,7 @@ from torch.autograd import Variable
 from torch.nn.init import xavier_normal
 from .encoder import Encoder
 from .decoder import Decoder
+from utils.batchloader import BatchLoader
 
 
 class VAE(nn.Module):
@@ -24,44 +25,42 @@ class VAE(nn.Module):
         self.context_to_mu = nn.Linear(self.latent_size, self.latent_size)
         self.context_to_logvar = nn.Linear(self.latent_size, self.latent_size)
 
-        self.decoder = Decoder(self.vocab_size, self.latent_size, decoder_size, decoder_num_layers)
+        self.decoder = Decoder(self.vocab_size, self.latent_size, decoder_size, decoder_num_layers, self.embed_size)
 
-    def forward(self, drop_prob, input=None, z=None, batch_size=None, use_cuda=None):
+    def forward(self, drop_prob,
+                encoder_input=None,
+                decoder_input=None,
+                z=None):
         """
         :param drop_prob: Probability of units to be dropped out
-        :param input: An long tensor with shape of [batch_size, seq_len]
+        :param encoder_input: An long tensor with shape of [batch_size, seq_len]
+        :param decoder_input: An long tensor with shape of [batch_size, seq_len]
         :param z: An float tensor with shape of [batch_size, latent_variable_size] in case if sampling is performed
-        :param batch_size: Exactly batch size
-        :param use_cuda: whether to use cuda for sampling z
         :return: logits for main model and auxiliary logits
                      of probabilities distribution over various tokens in sequence,
                  estimated latent loss
         """
 
-        if input is not None:
-            [batch_size, _] = input.size()
-            input = self.embed(input)
-            context = self.encoder(input)
+        if z is None:
+            [batch_size, _] = encoder_input.size()
+            encoder_input = self.embed(encoder_input)
+            context = self.encoder(encoder_input)
 
             mu = self.context_to_mu(context)
             logvar = self.context_to_logvar(context)
             std = t.exp(0.5 * logvar)
 
             z = Variable(t.randn([batch_size, self.latent_size]))
-            if use_cuda:
+            if encoder_input.is_cuda:
                 z = z.cuda()
             z = z * std + mu
             z = F.dropout(z, drop_prob, training=True)
 
             kld = (-0.5 * t.sum(logvar - t.pow(mu, 2) - t.exp(logvar) + 1, 1)).mean()
         else:
-            z = Variable(t.randn([batch_size, self.latent_size])) if z is None else z
-            if use_cuda:
-                z = z.cuda()
-
             kld = None
-
-        logits, aux_logits = self.decoder(z)
+        decoder_input = self.embed(decoder_input)
+        logits, aux_logits = self.decoder(z, decoder_input)
 
         return logits, aux_logits, kld
 
@@ -73,3 +72,42 @@ class VAE(nn.Module):
         logvar = self.context_to_logvar(context)
 
         return mu, logvar
+
+    def sample(self, batch_loader: BatchLoader, use_cuda, z=None):
+
+        if z is None:
+            z = Variable(t.randn([1, self.latent_size]))
+            if use_cuda:
+                z = z.cuda()
+
+        final_state = None
+
+        cnn_out = self.decoder.conv_decoder(z)
+
+        x = batch_loader.go_input(1, use_cuda)
+        x = self.embed(x)
+
+        result = []
+
+        for var in t.transpose(cnn_out, 0, 1):
+            out, final_state = self.decoder.rnn_decoder(var.unsqueeze(1), decoder_input=x, initial_state=final_state)
+            out = F.softmax(out.squeeze())
+
+            out = out.data.cpu().numpy()
+            idx = batch_loader.sample_char(out)
+            x = batch_loader.idx_to_char[idx]
+
+            if x == batch_loader.stop_token:
+                break
+
+            result += [x]
+
+            x = Variable(t.from_numpy(np.array([[idx]]))).long()
+            if use_cuda:
+                x = x.cuda()
+            x = self.embed(x)
+
+
+        return ''.join(result)
+
+
