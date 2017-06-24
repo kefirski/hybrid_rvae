@@ -2,10 +2,9 @@ from math import floor
 
 
 class Parameters:
-    def __init__(self, vocab_size, max_seq_len):
+    def __init__(self, vocab_size):
 
         self.vocab_size = vocab_size
-        self.max_seq_len = max_seq_len
         self.embed_size = 80
 
         '''
@@ -19,9 +18,9 @@ class Parameters:
                               [512, 512, 4, 2],
                               [512, 512, 4, 2]]
 
-        self.latent_variable_size = self.encoder_sizes[-1][1]
+        self.latent_size = self.encoder_sizes[-1][1]
 
-        self.decoder_sizes = [[self.latent_variable_size, 512, 4, 2, 0],
+        self.decoder_sizes = [[self.latent_size, 512, 4, 2, 0],
                               [512, 512, 4, 2, 1],
                               [512, 256, 4, 2, 0],
                               [256, 256, 4, 2, 1],

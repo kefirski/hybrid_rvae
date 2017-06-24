@@ -54,7 +54,7 @@ class Decoder(nn.Module):
         latent_variable = latent_variable.unsqueeze(2)
 
         aux_logits = self.cnn(latent_variable)
-        aux_logits = t.transpose(aux_logits, 1, 2)
+        aux_logits = t.transpose(aux_logits, 1, 2).contiguous()
 
         logits, _ = self.rnn(aux_logits)
 

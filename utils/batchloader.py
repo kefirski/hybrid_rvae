@@ -37,14 +37,13 @@ class BatchLoader:
 
         self.vocab_size, self.idx_to_char, self.char_to_idx = self.build_vocab(data)
 
+        self.max_seq_len = 209
         data = np.array([[self.char_to_idx[char] for char in line] for line in data.split('\n')[:-1]
-                         if 70 <= len(line) <= 209])
-
-        self.max_seq_len = max([len(line) for line in data])
+                         if 70 <= len(line) <= self.max_seq_len])
 
         self.valid_data, self.train_data = data[:self.split], data[self.split:]
 
-        self.data_len = [len(var) for var in [self.valid_data, self.train_data]]
+        self.data_len = [len(var) for var in [self.train_data, self.valid_data]]
 
     def build_vocab(self, data):
 
