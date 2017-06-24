@@ -46,7 +46,7 @@ if __name__ == "__main__":
         input, target = batch_loader.next_batch(args.batch_size, 'train', args.use_cuda)
         target = target.view(-1)
 
-        logits, aux_logits, kld = vae(args.dropout, input)
+        logits, aux_logits, kld = vae(args.dropout, input, use_cuda=args.use_cuda)
 
         logits = logits.view(-1, batch_loader.vocab_size)
         cross_entropy = F.cross_entropy(logits, target)
@@ -64,7 +64,7 @@ if __name__ == "__main__":
         input, target = batch_loader.next_batch(args.batch_size, 'valid', args.use_cuda)
         target = target.view(-1)
 
-        logits, aux_logits, valid_kld = vae(0., input)
+        logits, aux_logits, valid_kld = vae(0., input, use_cuda=args.use_cuda)
 
         logits = logits.view(-1, batch_loader.vocab_size)
         valid_cross_entropy = F.cross_entropy(logits, target)
