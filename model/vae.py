@@ -89,7 +89,7 @@ class VAE(nn.Module):
 
         result = []
 
-        for var in t.transpose(cnn_out, 0, 1):
+        for var in t.transpose(cnn_out, 0, 1)[:150]:
             out, final_state = self.decoder.rnn_decoder(var.unsqueeze(1), decoder_input=x, initial_state=final_state)
             out = F.softmax(out.squeeze())
 
@@ -106,7 +106,6 @@ class VAE(nn.Module):
             if use_cuda:
                 x = x.cuda()
             x = self.embed(x)
-
 
         return ''.join(result)
 

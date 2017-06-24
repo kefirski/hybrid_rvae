@@ -49,10 +49,10 @@ if __name__ == "__main__":
         logits, aux_logits, kld = vae(args.dropout, input, decoder_input)
 
         logits = logits.view(-1, batch_loader.vocab_size)
-        cross_entropy = F.cross_entropy(logits, target)
+        cross_entropy = F.cross_entropy(logits, target, size_average=False)
 
         aux_logits = aux_logits.view(-1, batch_loader.vocab_size)
-        aux_cross_entropy = F.cross_entropy(aux_logits, target)
+        aux_cross_entropy = F.cross_entropy(aux_logits, target, size_average=False)
 
         loss = cross_entropy + args.aux * aux_cross_entropy + kld
 
@@ -67,10 +67,10 @@ if __name__ == "__main__":
         logits, aux_logits, valid_kld = vae(args.dropout, input, decoder_input)
 
         logits = logits.view(-1, batch_loader.vocab_size)
-        valid_cross_entropy = F.cross_entropy(logits, target)
+        valid_cross_entropy = F.cross_entropy(logits, target, size_average=False)
 
         aux_logits = aux_logits.view(-1, batch_loader.vocab_size)
-        valid_aux_cross_entropy = F.cross_entropy(aux_logits, target)
+        valid_aux_cross_entropy = F.cross_entropy(aux_logits, target, size_average=False)
 
         loss = valid_cross_entropy + args.aux * valid_aux_cross_entropy + kld
 
@@ -80,12 +80,12 @@ if __name__ == "__main__":
             print(iteration)
             print('|--------ce------aux-ce-----kld--------|')
             print('|----------------train-----------------|')
-            print(cross_entropy.data.cpu().numpy()[0],
-                  aux_cross_entropy.data.cpu().numpy()[0],
+            print(cross_entropy.data.cpu().numpy()[0]/(210 * args.batch_size),
+                  aux_cross_entropy.data.cpu().numpy()[0]/(210 * args.batch_size),
                   kld.data.cpu().numpy()[0])
             print('|----------------valid-----------------|')
-            print(valid_cross_entropy.data.cpu().numpy()[0],
-                  valid_aux_cross_entropy.data.cpu().numpy()[0],
+            print(valid_cross_entropy.data.cpu().numpy()[0]/(210 * args.batch_size),
+                  valid_aux_cross_entropy.data.cpu().numpy()[0]/(210 * args.batch_size),
                   valid_kld.data.cpu().numpy()[0])
             print('|--------------------------------------|')
             print(vae.sample(batch_loader, args.use_cuda))
