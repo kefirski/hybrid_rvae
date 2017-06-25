@@ -6,6 +6,7 @@ import torch.nn.functional as F
 from utils.batchloader import BatchLoader
 from utils.parameters import Parameters
 from model.vae import VAE
+from torch.autograd import Variable
 
 
 if __name__ == "__main__":
@@ -88,8 +89,8 @@ if __name__ == "__main__":
                   valid_aux_cross_entropy.data.cpu().numpy()[0]/(210 * args.batch_size),
                   valid_kld.data.cpu().numpy()[0])
             print('|--------------------------------------|')
-            input, _, _ = batch_loader.next_batch(1, 'valid', args.use_cuda)
-            mu, logvar = vae.inference(input)
+            input, _, _ = batch_loader.next_batch(2, 'valid', args.use_cuda)
+            mu, logvar = vae.inference(input[0].unsqueeze(1))
             std = t.exp(0.5 * logvar)
 
             z = Variable(t.randn([1, parameters.latent_size]))
