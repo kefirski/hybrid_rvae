@@ -88,5 +88,14 @@ if __name__ == "__main__":
                   valid_aux_cross_entropy.data.cpu().numpy()[0]/(210 * args.batch_size),
                   valid_kld.data.cpu().numpy()[0])
             print('|--------------------------------------|')
-            print(vae.sample(batch_loader, args.use_cuda))
+            input, _, _ = batch_loader.next_batch(1, 'valid', args.use_cuda)
+            mu, logvar = vae.inference(input)
+            std = t.exp(0.5 * logvar)
+
+            z = Variable(t.randn([1, parameters.latent_size]))
+            if args.use_cuda:
+                z = z.cuda()
+            z = z * std + mu
+            print(''.join([batch_loader.idx_to_char[idx] for idx in input.data.cpu().numpy()[0]]))
+            print(vae.sample(batch_loader, args.use_cuda, z))
             print('|--------------------------------------|')
